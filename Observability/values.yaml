@@ -1,0 +1,79 @@
+
+# ------------------------------------------------------------------
+# values.yaml
+#
+# Helm values for kube-prometheus-stack in this lab.
+#
+# Install:
+#   helm install prometheus prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace \
+#     -f observability/values.yaml
+# ------------------------------------------------------------------
+
+# -- Grafana
+grafana:
+  # Admin password: prom-operator (default)
+  service:
+    type: NodePort
+  sidecar:
+    dashboards:
+      # Scan all namespaces for dashboard ConfigMaps
+      # Required for the Aether AMP ConfigMap in cattle-dashboards
+      searchNamespace: ALL
+      label: grafana_dashboard
+      labelValue: "1"
+  # Import the 5G Dashboard as a provisioned dashboard
+  # See dashboard-import.md for manual alternative
+
+# -- Prometheus
+prometheus:
+  prometheusSpec:
+    # Discover ServiceMonitors in ALL namespaces
+    # Required because SD-Core NFs are in aether-5gc, not monitoring
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorNamespaceSelector: {}
+    # Scrape interval (default 30s)
+    scrapeInterval: 30s
+    # Resource limits for single-node lab
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    # Storage (emptyDir for lab; use PVC for persistence)
+    storageSpec: {}
+    # Retention
+    retention: 7d
+
+# -- Alertmanager
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+# -- Node exporter
+nodeExporter:
+  enabled: true
+
+# -- Kube state metrics
+kubeStateMetrics:
+  enabled: true
+
+# -- Prometheus Operator
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

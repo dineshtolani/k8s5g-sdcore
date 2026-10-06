@@ -1,0 +1,45 @@
+Place them in the repo:
+
+
+cd ~/your-repo
+mkdir -p manifests scripts docs
+# Paste the files into their paths
+chmod +x scripts/*.sh manifests/02-upf-node-label.sh
+
+Run in order on a fresh VM:
+
+
+sudo bash scripts/01-host-prepare-hugepages.sh
+sudo reboot
+
+# after reboot:
+sudo MGMT_IP=192.168.100.200 bash scripts/02-vm-network-setup.sh
+
+sudo bash scripts/03-k8s-prereqs.sh
+sudo reboot
+
+# after reboot:
+sudo MGMT_IP=192.168.100.200 bash scripts/04-kubeadm-init.sh
+
+# add UPF node label
+bash manifests/02-upf-node-label.sh
+
+# now run OnRamp
+cd ~/aether-onramp
+make aether-pingall
+make aether-5gc-install
+make aether-gnbsim-install
+make aether-gnbsim-run
+
+# validate
+sudo bash ~/your-repo/scripts/05-validate-lab.sh
+
+A Few Notes
+
+    The scripts are idempotent where practical — running them twice won't break the system, they'll just skip already-done steps.
+
+    01-host-prepare-hugepages.sh requires a reboot — kernel command line changes never take effect live. It backs up /etc/default/grub before editing.
+
+    02-vm-network-setup.sh moves OnRamp's netplan files aside — this is the specific fix for the "VM becomes unreachable after OnRamp" issue you hit.
+
+    05-validate-lab.sh produces the evidence file you'll want in the repo as validation-evidence.txt — it captures the working state in one reproducible artifact.

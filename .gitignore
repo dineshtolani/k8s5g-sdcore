@@ -1,0 +1,21 @@
+# Build artifacts
+*.tar
+*.qcow2
+*.iso
+upf-epc/build/
+upf-epc/bess/
+
+# Kubernetes secrets
+*kubeconfig*
+*admin.conf*
+*-secret.yaml
+certs/
+
+# Logs and temp
+*.log
+/tmp/
+
+# Editor
+.DS_Store
+*.swp
+*~

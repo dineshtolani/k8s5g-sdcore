@@ -1,0 +1,76 @@
+
+# ------------------------------------------------------------------
+# servicemonitor.yaml
+#
+# Custom ServiceMonitor for SD-Core network functions.
+#
+# The SD-Core Helm chart creates ServiceMonitors for AMF and SMF, but
+# the UPF does NOT expose metrics in AF_PACKET mode. This file is a
+# template for adding a ServiceMonitor if a metrics endpoint becomes
+# available (e.g., after CNDP/DPDK migration).
+#
+# Apply:
+#   kubectl apply -f observability/servicemonitor.yaml
+# ------------------------------------------------------------------
+
+# -- UPF ServiceMonitor (only if UPF exposes /metrics)
+# The UPF service `upf-http` exposes ports 8000 and 8080.
+# Check if either serves Prometheus metrics:
+#   kubectl exec -n aether-5gc upf-0 -c bess -- curl -s localhost:8000/metrics
+# If yes, enable this monitor.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: upf-metrics
+  namespace: aether-5gc
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: upf
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+    - aether-5gc
+---
+# -- AMF ServiceMonitor (reference — usually created by Helm chart)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: amf-metrics
+  namespace: aether-5gc
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: amf
+  endpoints:
+  - port: metrics
+    interval: 30s
+  namespaceSelector:
+    matchNames:
+    - aether-5gc
+---
+# -- SMF ServiceMonitor (reference — usually created by Helm chart)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: smf-metrics
+  namespace: aether-5gc
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: smf
+  endpoints:
+  - port: metrics
+    interval: 30s
+  namespaceSelector:
+    matchNames:
+    - aether-5gc
